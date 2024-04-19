@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hotdeal/screens/detail_screen.dart';
@@ -7,6 +8,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazy_load_scrollview/lazy_load_scrollview.dart';
+import 'package:swipeable_page_route/swipeable_page_route.dart';
 
 import '../models/item.dart';
 
@@ -42,15 +44,32 @@ class _ListScreenState extends State<ListScreen> {
           itemBuilder: (context, index) {
             return InkWell(
               onTap: () {
-                Navigator.of(context).push(CupertinoPageRoute(
-                  builder: (context) {
-                    return DetailScreen(item: _list[index]);
-                  },
+
+                Navigator.of(context).push(SwipeablePageRoute(
+                  builder: (BuildContext context) => DetailScreen(item: _list[index]),
                 ));
+
+                // Navigator.of(context).push(CupertinoPageRoute(
+                //   builder: (context) {
+                //     return DetailScreen(item: _list[index]);
+                //   },
+                // ));
               },
               child: Column(
                 children: [
-                  Image.network(_list[index].imageUrl),
+                  CachedNetworkImage(
+                    imageUrl: _list[index].imageUrl,
+                    placeholder: (context, url) => Container(
+                        width: 100,
+                        height: 100,
+                        child: Center(child: CircularProgressIndicator())),
+                    errorWidget: (context, url, error) {
+                      print(url);
+                      print(error);
+                      return Container(
+                          width: 100, height: 100, child: Icon(Icons.error));
+                    },
+                  ),
                   Text(_list[index].title),
                   Text(_list[index].detailUrl),
                 ],
@@ -59,9 +78,9 @@ class _ListScreenState extends State<ListScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        getList();
-      }),
+      // floatingActionButton: FloatingActionButton(onPressed: () {
+      //   getList();
+      // }),
     );
   }
 

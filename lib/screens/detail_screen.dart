@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
@@ -21,10 +23,22 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   List<String> _list = [];
   int _page = 1;
+  bool _pageEnd = false;
 
   @override
   void initState() {
+    init();
+  }
+
+  init() {
     getList();
+    // _page++;
+    // getList();
+    // _page++;
+    // getList();
+    // _page++;
+    // getList();
+    // _page++;
   }
 
   @override
@@ -35,23 +49,32 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
       body: LazyLoadScrollView(
         onEndOfPage: () {
+          if (_pageEnd) return;
           _page++;
           getList();
         },
-        child: ListView.builder(
+        child: MasonryGridView.count(
           itemCount: _list.length,
+          crossAxisCount: 2,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
           itemBuilder: (context, index) {
-            return Column(
-              children: [
-                Image.network(_list[index]),
-              ],
+            return CachedNetworkImage(
+              imageUrl: _list[index],
+              placeholder: (context, url) => Container(
+                  width: 100,
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator())),
+              errorWidget: (context, url, error) {
+                print(url);
+                print(error);
+                return Container(
+                    width: 100, height: 100, child: Icon(Icons.error));
+              },
             );
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        getList();
-      }),
     );
   }
 
@@ -64,6 +87,10 @@ class _DetailScreenState extends State<DetailScreen> {
     dom.Document document = parse(responseBody);
     List<dom.Element> imageList = document.querySelectorAll("img.aligncenter");
     for (dom.Element row in imageList) {
+      if (_list.contains(row.attributes["src"]!)) {
+        _pageEnd = true;
+        return;
+      }
       _list.add(row.attributes["src"]!);
     }
     setState(() {});
