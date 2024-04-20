@@ -1,8 +1,10 @@
+import 'package:fast_cached_network_image/fast_cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hotdeal/screens/list_screen.dart';
 
-void main() {
+Future<void> main() async {
   CustomImageCache();
+  await FastCachedImageConfig.init(clearCacheAfter: const Duration(days: 15));
   runApp(const MyApp());
 }
 
@@ -18,6 +20,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: false,
       ),
       home: ListScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 
