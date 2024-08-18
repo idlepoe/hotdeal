@@ -27,7 +27,13 @@ class _ListScreenState extends State<ListScreen> {
   List<Item> _list = [];
   int _page = 1;
 
- int _count = 3;
+  int _count = 0;
+
+  List<String> _bull_type = [
+    "archive",
+    "ranking-images",
+    "ranking-images/sort/update"
+  ];
 
   @override
   void initState() {
@@ -39,19 +45,20 @@ class _ListScreenState extends State<ListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("hotdeal"),
-      actions: [
-        ElevatedButton(onPressed: (){
-          _count++;
-
-          if(_count == 5){
-            _count = 3;
-          }
-          setState(() {
-
-          });
-
-        }, child: Text(_count.toString()))
-      ],
+        actions: [
+          ElevatedButton(
+              onPressed: () {
+                _count++;
+                _page = 1;
+                _list = [];
+                setState(() {});
+                if (_count == 3) {
+                  _count = 0;
+                }
+                getList();
+              },
+              child: Text(_bull_type[_count]))
+        ],
       ),
       body: LazyLoadScrollView(
         onEndOfPage: () {
@@ -60,15 +67,34 @@ class _ListScreenState extends State<ListScreen> {
         },
         child: MasonryGridView.count(
           itemCount: _list.length,
-          crossAxisCount: _count,
+          crossAxisCount: 3,
           mainAxisSpacing: 4,
           crossAxisSpacing: 4,
           itemBuilder: (context, index) {
             return InkWell(
               onTap: () {
-                final imageProvider =
-                    Image.network(_list[index].imageUrl).image;
-                showImageViewer(context, imageProvider,swipeDismissible: true, doubleTapZoomable: true,onViewerDismissed: () {
+                List<String> list = _list[index].imageUrl.split("/");
+
+                String remake = "";
+                int i = 0;
+                for (String row in list) {
+                  if (i == list.length - 2) {
+                  } else {
+                    remake += row + "/";
+                  }
+                  i++;
+                }
+
+                remake = remake.substring(0, remake.length - 1);
+
+                print(remake);
+                print(remake);
+                print(remake);
+
+                final imageProvider = Image.network(remake).image;
+                showImageViewer(context, imageProvider,
+                    swipeDismissible: true,
+                    doubleTapZoomable: true, onViewerDismissed: () {
                   print("dismissed");
                 });
               },
@@ -77,7 +103,7 @@ class _ListScreenState extends State<ListScreen> {
                 fit: BoxFit.cover,
                 fadeInDuration: const Duration(seconds: 1),
                 errorBuilder: (context, exception, stacktrace) {
-                  return Text(stacktrace.toString(),maxLines: 1,overflow: TextOverflow.ellipsis,);
+                  return SizedBox();
                 },
                 loadingBuilder: (context, progress) {
                   return Container(
@@ -112,22 +138,29 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Future<void> getList() async {
-    var client = http.Client();
-    var response = await client.get(
-      Uri.parse(
-          'https://ko.hentai-cosplays.com/archive/page/' + _page.toString()),
-    );
-    String responseBody = utf8.decode(response.bodyBytes, allowMalformed: true);
-    dom.Document document = parse(responseBody);
-    List<dom.Element> imageList = document.querySelectorAll("img");
+    try {
+      var client = http.Client();
+      var response = await client.get(
+        Uri.parse('https://ko.hentai-cosplays.com/' +
+            _bull_type[_count] +
+            '/page/' +
+            _page.toString()),
+      );
+      String responseBody =
+          utf8.decode(response.bodyBytes, allowMalformed: true);
+      dom.Document document = parse(responseBody);
+      List<dom.Element> imageList = document.querySelectorAll("img");
 
-    for (dom.Element row in imageList) {
-      print(row.attributes.toString());
-      String? imageUrl = row.attributes["data-original"].toString();
-      String? title = row.attributes["alt"].toString();
-      String? detailUrl = "";
-      _list.add(Item(imageUrl!, title, detailUrl!));
-      setState(() {});
+      for (dom.Element row in imageList) {
+        print(row.attributes.toString());
+        String? imageUrl = row.attributes["data-original"].toString();
+        String? title = row.attributes["alt"].toString();
+        String? detailUrl = "";
+        _list.add(Item(imageUrl!, title, detailUrl!));
+        setState(() {});
+      }
+    } catch (e) {
+      print(e);
     }
   }
 }
